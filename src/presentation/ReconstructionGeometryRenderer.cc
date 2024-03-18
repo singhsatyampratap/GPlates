@@ -247,7 +247,7 @@ GPlatesPresentation::ReconstructionGeometryRenderer::RenderParams::RenderParams(
 	fill_topological_network_rigid_blocks(false),
 	show_topological_network_segment_velocity(false),
 	topological_network_triangulation_colour_mode(TopologyNetworkVisualLayerParams::TRIANGULATION_COLOUR_DRAW_STYLE),
-	topological_network_triangulation_draw_mode(TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_BOUNDARY)
+	topological_network_triangulation_draw_mode(TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_NONE)
 {
 }
 
@@ -896,14 +896,17 @@ GPlatesPresentation::ReconstructionGeometryRenderer::visit(
 		if (d_render_params.topological_network_triangulation_draw_mode ==
 			TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_MESH)
 		{
+			// Draw triangulation *edges* using draw style.
 			render_topological_network_delaunay_edges_using_draw_style(rtn);
 		}
-		else // draw boundary (optionally filled) using draw style ...
+		else if (d_render_params.topological_network_triangulation_draw_mode ==
+			TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_FILL)
 		{
-			render_topological_network_boundary_using_draw_style(rtn);
+			// Draw triangulation *fill* using draw style.
+			render_topological_network_fill_using_draw_style(rtn);
 		}
 	}
-	else // colour by dilatation or second invariant strain rate...
+	else // not colouring by draw style (ie, colour by dilatation, second invariant strain rate, etc)...
 	{
 		// If we're using smoothed strain rates then each vertex of a face/edge will have a different colour.
 		// In contrast, a non-smoothed strain rate is constant across each face/edge.
@@ -912,16 +915,12 @@ GPlatesPresentation::ReconstructionGeometryRenderer::visit(
 		if (strain_rate_smoothing == GPlatesAppLogic::TopologyNetworkParams::NO_SMOOTHING)
 		{
 			if (d_render_params.topological_network_triangulation_draw_mode ==
-				TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_BOUNDARY)
-			{
-				render_topological_network_delaunay_edges_unsmoothed_strain_rates(rtn, true/*only_boundary_edges*/);
-			}
-			else if (d_render_params.topological_network_triangulation_draw_mode ==
 				TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_MESH)
 			{
 				render_topological_network_delaunay_edges_unsmoothed_strain_rates(rtn);
 			}
-			else // TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_FILL ...
+			else if (d_render_params.topological_network_triangulation_draw_mode ==
+				TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_FILL)
 			{
 				render_topological_network_delaunay_faces_unsmoothed_strain_rates(rtn);
 			}
@@ -934,16 +933,12 @@ GPlatesPresentation::ReconstructionGeometryRenderer::visit(
 							: SUBDIVIDE_TOPOLOGICAL_NETWORK_DELAUNAY_BARYCENTRIC_SMOOTHED_ANGLE;
 
 			if (d_render_params.topological_network_triangulation_draw_mode ==
-				TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_BOUNDARY)
-			{
-				render_topological_network_delaunay_edges_smoothed_strain_rates(rtn, subdivide_threshold_angle, true/*only_boundary_edges*/);
-			}
-			else if (d_render_params.topological_network_triangulation_draw_mode ==
 				TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_MESH)
 			{
 				render_topological_network_delaunay_edges_smoothed_strain_rates(rtn, subdivide_threshold_angle);
 			}
-			else // TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_FILL ...
+			else if (d_render_params.topological_network_triangulation_draw_mode ==
+				TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_FILL)
 			{
 				render_topological_network_delaunay_faces_smoothed_strain_rates(rtn, std::cos(subdivide_threshold_angle));
 			}
@@ -952,15 +947,11 @@ GPlatesPresentation::ReconstructionGeometryRenderer::visit(
 
 	// Render rigid interior blocks.
 	//
-	// Note: We only render interior blocks when they are filled or we are colouring the deforming region by draw style,
-	// otherwise the dilatation or second invariant strain rate colouring is overwritten around the
-	// boundary of the interior blocks.
-	if (d_render_params.fill_topological_network_rigid_blocks ||
-		d_render_params.topological_network_triangulation_colour_mode ==
-			TopologyNetworkVisualLayerParams::TRIANGULATION_COLOUR_DRAW_STYLE)
-	{
-		render_topological_network_rigid_blocks(rtn);
-	}
+	// Note: We now *always* render the interior blocks (whether filled or unfilled).
+	//       Previously (in GPlates <= 2.4) we only rendered interior blocks when they were filled or the deforming region was coloured by draw style.
+	//       This prevented the dilatation or second invariant strain rate colouring from being overwritten around the boundary of the interior blocks.
+	//       However it's better to always render interior blocks since this is more consistent with the exterior boundary (that was/is *always* rendered).
+	render_topological_network_rigid_blocks(rtn);
 
 	// Check for drawing velocity vectors at vertices of delaunay triangulation.
 	if (d_render_params.show_topological_network_segment_velocity)
@@ -1589,8 +1580,7 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_network_
 void
 GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_network_delaunay_edges_smoothed_strain_rates(
 		const GPlatesAppLogic::ResolvedTopologicalNetwork::non_null_ptr_to_const_type &rtn,
-		const double &subdivide_edge_threshold_angle,
-		bool only_boundary_edges)
+		const double &subdivide_edge_threshold_angle)
 {
 	const GPlatesAppLogic::ResolvedTriangulation::Network &resolved_triangulation_network =
 			rtn->get_triangulation_network();
@@ -1644,13 +1634,6 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_network_
 		// If both triangles adjoining current edge are outside deforming region or are
 		// infinite faces for some reason then the skip the current edge.
 		if (num_valid_faces == 0)
-		{
-			continue;
-		}
-
-		// If we've been requested to only include boundary edges then only include edges with one adjacent face.
-		if (only_boundary_edges &&
-			num_valid_faces != 1)
 		{
 			continue;
 		}
@@ -1774,8 +1757,7 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_network_
 
 void
 GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_network_delaunay_edges_unsmoothed_strain_rates(
-		const GPlatesAppLogic::ResolvedTopologicalNetwork::non_null_ptr_to_const_type &rtn,
-		bool only_boundary_edges)
+		const GPlatesAppLogic::ResolvedTopologicalNetwork::non_null_ptr_to_const_type &rtn)
 {
 	const GPlatesAppLogic::ResolvedTriangulation::Network &resolved_triangulation_network =
 			rtn->get_triangulation_network();
@@ -1858,13 +1840,6 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_network_
 		// If both triangles adjoining current edge are outside deforming region or are
 		// infinite faces for some reason then the skip the current edge.
 		if (num_valid_faces == 0)
-		{
-			continue;
-		}
-
-		// If we've been requested to only include boundary edges then only include edges with one adjacent face.
-		if (only_boundary_edges &&
-			num_valid_faces != 1)
 		{
 			continue;
 		}
@@ -2070,18 +2045,15 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_network_
 
 
 void
-GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_network_boundary_using_draw_style(
+GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_network_fill_using_draw_style(
 		const GPlatesAppLogic::ResolvedTopologicalNetwork::non_null_ptr_to_const_type &rtn)
 {
+	// Make a copy of the render params, but with fill polygons turned on since our network boundary is a polygon.
 	RenderParams render_params(d_render_params);
-	if (d_render_params.topological_network_triangulation_draw_mode == TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_FILL)
-	{
-		// Make a copy of the render params, but with fill polygons turned on since our network boundary is a polygon.
-		render_params.fill_polygons = true;
-	}
+	render_params.fill_polygons = true;
 
-	// Use the network boundary polygon with rigid block interior holes since, when the triangulation
-	// (ie, deforming region) is filled, we don't want to fill the interior holes (rigid blocks).
+	// Use the network boundary polygon with rigid block interior holes since the triangulation
+	// (ie, deforming region) is filled and we don't want to fill the interior holes (rigid blocks).
 	GPlatesMaths::PolygonOnSphere::non_null_ptr_to_const_type network_boundary_with_rigid_block_holes =
 			rtn->get_triangulation_network().get_boundary_polygon_with_rigid_block_holes();
 

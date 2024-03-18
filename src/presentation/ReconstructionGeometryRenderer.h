@@ -533,20 +533,18 @@ namespace GPlatesPresentation
 		void
 		render_topological_network_delaunay_edges_smoothed_strain_rates(
 				const GPlatesAppLogic::ResolvedTopologicalNetwork::non_null_ptr_to_const_type &rtn,
-				const double &subdivide_edge_threshold_angle,
-				bool only_boundary_edges = false);
+				const double &subdivide_edge_threshold_angle);
 
 		void
 		render_topological_network_delaunay_edges_unsmoothed_strain_rates(
-				const GPlatesAppLogic::ResolvedTopologicalNetwork::non_null_ptr_to_const_type &rtn,
-				bool only_boundary_edges = false);
+				const GPlatesAppLogic::ResolvedTopologicalNetwork::non_null_ptr_to_const_type &rtn);
 
 		void
 		render_topological_network_delaunay_edges_using_draw_style(
 				const GPlatesAppLogic::ResolvedTopologicalNetwork::non_null_ptr_to_const_type &rtn);
 
 		void
-		render_topological_network_boundary_using_draw_style(
+		render_topological_network_fill_using_draw_style(
 				const GPlatesAppLogic::ResolvedTopologicalNetwork::non_null_ptr_to_const_type &rtn);
 
 		void

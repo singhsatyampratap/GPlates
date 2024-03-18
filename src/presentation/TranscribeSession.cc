@@ -2227,11 +2227,12 @@ namespace GPlatesPresentation
 						}
 						else
 						{
-							// Unfilled triangulations were previously drawn as a boundary (when colouring by draw style) and
-							// as a mesh (when colouring by strain rate).
+							// Unfilled triangulations were previously:
+							// - drawn as a boundary when colouring by draw style (ie, only boundary was drawn, not triangulation),
+							// - drawn as a mesh when colouring by strain rate.
 							params.set_triangulation_draw_mode(
 									colour_mode == TopologyNetworkVisualLayerParams::TRIANGULATION_COLOUR_DRAW_STYLE
-									? TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_BOUNDARY
+									? TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_NONE
 									: TopologyNetworkVisualLayerParams::TRIANGULATION_DRAW_MESH);
 						}
 					}
