@@ -832,6 +832,16 @@ GPlatesPresentation::ReconstructionGeometryRenderer::visit(
 			d_rendered_geometry_layer,
 			GPLATES_ASSERTION_SOURCE);
 
+	// Return early if NOT filling topological polygons.
+	//
+	// Note: The boundary segments of topological polygons are no longer rendered as a polygon *outline* (as they were in GPlates <= 2.4).
+	//       Instead they're now rendered separately as sub-segments shared by topological polygons and networks in a separate post-layer render pass
+	//       (that renders on top of the *filled* polygon, if drawn).
+	if (!d_render_params.fill_polygons)
+	{
+		return;
+	}
+
 	GPlatesMaths::GeometryOnSphere::non_null_ptr_to_const_type rtg_geometry = rtg->resolved_topology_geometry();
 
 	if (!d_render_settings.show_topological_sections() ||
@@ -890,6 +900,9 @@ GPlatesPresentation::ReconstructionGeometryRenderer::visit(
 		return;
 	}
 
+	//
+	// Render the network's triangulation.
+	//
 	if (d_render_params.topological_network_triangulation_colour_mode ==
 		TopologyNetworkVisualLayerParams::TRIANGULATION_COLOUR_DRAW_STYLE)
 	{
@@ -945,12 +958,22 @@ GPlatesPresentation::ReconstructionGeometryRenderer::visit(
 		}
 	}
 
+	//
+	// Note: The exterior boundary segments of topological networks are no longer rendered as a network outline (as they were in GPlates <= 2.4).
+	//       Instead they're now rendered separately as sub-segments shared by topological polygons and networks in a separate post-layer render pass
+	//       (that renders on top of the network triangulation, if drawn).
+	//
+
 	// Render rigid interior blocks.
+	//
+	// This is the *interior* boundary equivalent of the *exterior* boundary.
+	// Except we're rendering the *interior* boundary as part of this network
+	// (whereas the *exterior* boundary is drawn in a separate render pass as mentioned above).
 	//
 	// Note: We now *always* render the interior blocks (whether filled or unfilled).
 	//       Previously (in GPlates <= 2.4) we only rendered interior blocks when they were filled or the deforming region was coloured by draw style.
 	//       This prevented the dilatation or second invariant strain rate colouring from being overwritten around the boundary of the interior blocks.
-	//       However it's better to always render interior blocks since this is more consistent with the exterior boundary (that was/is *always* rendered).
+	//       However it's better to always render interior blocks since this is more consistent with the exterior boundary (that was, and is, *always* rendered).
 	render_topological_network_rigid_blocks(rtn);
 
 	// Check for drawing velocity vectors at vertices of delaunay triangulation.
