@@ -351,6 +351,7 @@ GPlatesPresentation::ReconstructionGeometryRenderer::ReconstructionGeometryRende
 		const RenderParams &render_params,
 		const GPlatesGui::RenderSettings &render_settings,
 		const std::set<GPlatesModel::FeatureId> &topological_sections,
+		const GPlatesAppLogic::TopologyUtils::resolved_topological_boundaries_networks_to_shared_sub_segments_map_type &all_resolved_topological_shared_sub_segments,
 		const boost::optional<GPlatesGui::Colour> &colour,
 		const boost::optional<GPlatesMaths::Rotation> &reconstruction_adjustment,
 		boost::optional<const GPlatesGui::symbol_map_type &> feature_type_symbol_map,
@@ -358,6 +359,7 @@ GPlatesPresentation::ReconstructionGeometryRenderer::ReconstructionGeometryRende
 	d_render_params(render_params),
 	d_render_settings(render_settings),
 	d_topological_sections(topological_sections),
+	d_all_resolved_topological_shared_sub_segments(all_resolved_topological_shared_sub_segments),
 	d_colour(colour),
 	d_reconstruction_adjustment(reconstruction_adjustment),
 	d_feature_type_symbol_map(feature_type_symbol_map),
@@ -373,6 +375,10 @@ GPlatesPresentation::ReconstructionGeometryRenderer::begin_render(
 	GPlatesGlobal::Assert<GPlatesGlobal::PreconditionViolationError>(
 			!d_rendered_geometry_layer,
 			GPLATES_ASSERTION_SOURCE);
+
+	// Clear shared sub-segments of any resolved topological boundaries and networks
+	// that were rendered in the previous rendered geometry layer.
+	d_resolved_topological_shared_sub_segments.clear();
 
 	// We've started targeting a rendered geometry layer.
 	d_rendered_geometry_layer = rendered_geometry_layer;
@@ -390,6 +396,10 @@ GPlatesPresentation::ReconstructionGeometryRenderer::end_render()
 	GPlatesGlobal::Assert<GPlatesGlobal::PreconditionViolationError>(
 			d_rendered_geometry_layer,
 			GPLATES_ASSERTION_SOURCE);
+
+	// Render shared sub-segments of any resolved topological boundaries and networks
+	// that were rendered in the current rendered geometry layer.
+	render_topological_shared_sub_segments();
 
 	// We're not targeting a rendered geometry layer anymore.
 	d_rendered_geometry_layer = boost::none;
@@ -832,16 +842,6 @@ GPlatesPresentation::ReconstructionGeometryRenderer::visit(
 			d_rendered_geometry_layer,
 			GPLATES_ASSERTION_SOURCE);
 
-	// Return early if NOT filling topological polygons.
-	//
-	// Note: The boundary segments of topological polygons are no longer rendered as a polygon *outline* (as they were in GPlates <= 2.4).
-	//       Instead they're now rendered separately as sub-segments shared by topological polygons and networks in a separate post-layer render pass
-	//       (that renders on top of the *filled* polygon, if drawn).
-	if (!d_render_params.fill_polygons)
-	{
-		return;
-	}
-
 	GPlatesMaths::GeometryOnSphere::non_null_ptr_to_const_type rtg_geometry = rtg->resolved_topology_geometry();
 
 	if (!d_render_settings.show_topological_sections() ||
@@ -869,6 +869,21 @@ GPlatesPresentation::ReconstructionGeometryRenderer::visit(
 		{
 			return;
 		}
+	}
+
+	// Add all shared boundary sub-segments of the resolved topological geometry.
+	// Only resolved topological polygons will have boundary sub-segments (resolved topological lines will get ignored).
+	// These boundary sub-segments will get rendered at the end of the current rendered geometry layer (in 'end_render()').
+	add_topological_shared_sub_segments(rtg->property());
+
+	// Return early if NOT filling topological polygons.
+	//
+	// Note: The boundary segments of topological polygons are no longer rendered as a polygon *outline* (as they were in GPlates <= 2.4).
+	//       Instead they're now rendered separately as sub-segments shared by topological polygons and networks in a separate post-layer render pass
+	//       (that renders on top of the *filled* polygon, if drawn).
+	if (!d_render_params.fill_polygons)
+	{
+		return;
 	}
 
 	GPlatesViewOperations::RenderedGeometry rendered_geometry =
@@ -958,11 +973,13 @@ GPlatesPresentation::ReconstructionGeometryRenderer::visit(
 		}
 	}
 
+	// Add all shared boundary sub-segments of the resolved topological network.
+	// These boundary sub-segments will get rendered at the end of the current rendered geometry layer (in 'end_render()').
 	//
 	// Note: The exterior boundary segments of topological networks are no longer rendered as a network outline (as they were in GPlates <= 2.4).
 	//       Instead they're now rendered separately as sub-segments shared by topological polygons and networks in a separate post-layer render pass
 	//       (that renders on top of the network triangulation, if drawn).
-	//
+	add_topological_shared_sub_segments(rtn->property());
 
 	// Render rigid interior blocks.
 	//
@@ -2189,6 +2206,50 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_network_
 
 		// Render the rendered geometry.
 		render(rendered_reconstruction_geometry);
+	}
+}
+
+
+void
+GPlatesPresentation::ReconstructionGeometryRenderer::add_topological_shared_sub_segments(
+		const GPlatesModel::FeatureHandle::iterator &resolved_topology_feature_property)
+{
+	// Find the shared sub-segments associated with the specified resolved topology.
+	auto shared_sub_segment_infos_iter = d_all_resolved_topological_shared_sub_segments.find(resolved_topology_feature_property);
+	if (shared_sub_segment_infos_iter == d_all_resolved_topological_shared_sub_segments.end())
+	{
+		// Resolved topology not found in the map.
+		// Could just be a resolved topological *line* which does not have a boundary (and hence no shared sub-segments).
+		return;
+	}
+
+	// Add the shared sub-segments associated with the specified resolved topology.
+	// These will get rendered later (at the end of the current rendered geometry layer).
+	for (const auto &shared_sub_segment_info : shared_sub_segment_infos_iter->second)
+	{
+		const GPlatesAppLogic::ResolvedTopologicalSharedSubSegment::non_null_ptr_type shared_sub_segment = shared_sub_segment_info.first;
+
+		d_resolved_topological_shared_sub_segments.insert(shared_sub_segment);
+	}
+}
+
+
+void
+GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_shared_sub_segments()
+{
+	for (auto shared_sub_segment : d_resolved_topological_shared_sub_segments)
+	{
+		GPlatesViewOperations::RenderedGeometry rendered_geometry =
+			create_rendered_reconstruction_geometry(
+					shared_sub_segment->get_shared_sub_segment_geometry(),
+					shared_sub_segment->get_reconstruction_geometry(),
+					d_render_params,
+					get_colour(shared_sub_segment->get_reconstruction_geometry(), d_colour, d_style_adapter),
+					d_reconstruction_adjustment,
+					d_feature_type_symbol_map);
+
+		// The rendered geometry represents the reconstruction geometry so render to the spatial partition.
+		render_reconstruction_geometry_on_sphere(rendered_geometry);
 	}
 }
 

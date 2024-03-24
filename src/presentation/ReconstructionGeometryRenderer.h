@@ -44,6 +44,7 @@
 #include "app-logic/ResolvedTriangulationDelaunay2.h"
 #include "app-logic/ResolvedTriangulationNetwork.h"
 #include "app-logic/ResolvedTriangulationUtils.h"
+#include "app-logic/TopologyUtils.h"
 
 #include "global/AssertionFailureException.h"
 #include "global/GPlatesAssert.h"
@@ -62,6 +63,7 @@
 #include "maths/Real.h"
 #include "maths/Rotation.h"
 
+#include "model/FeatureHandle.h"
 #include "model/FeatureId.h"
 
 #include "view-operations/RenderedColouredTriangleSurfaceMesh.h"
@@ -257,6 +259,9 @@ namespace GPlatesPresentation
 		 * @a topological_sections are all topological sections referenced by loaded topologies.
 		 * Together with @a render_settings this determines whether to show/hide topological sections.
 		 *
+		 * @a all_resolved_topological_shared_sub_segments are resolved topological shared sub-segments
+		 * between ALL resolved topological boundaries and networks for the current reconstruction being rendered.
+		 *
 		 * @a reconstruction_adjustment is only used to rotate derived @a ReconstructionGeometry
 		 * objects that are reconstructed. Ignored by types not explicitly reconstructed.
 		 *
@@ -267,6 +272,7 @@ namespace GPlatesPresentation
 				const RenderParams &render_params,
 				const GPlatesGui::RenderSettings &render_settings,
 				const std::set<GPlatesModel::FeatureId> &topological_sections,
+				const GPlatesAppLogic::TopologyUtils::resolved_topological_boundaries_networks_to_shared_sub_segments_map_type &all_resolved_topological_shared_sub_segments,
 				const boost::optional<GPlatesGui::Colour> &colour = boost::none,
 				const boost::optional<GPlatesMaths::Rotation> &reconstruction_adjustment = boost::none,
 				boost::optional<const GPlatesGui::symbol_map_type &> feature_type_symbol_map = boost::none,
@@ -414,6 +420,7 @@ namespace GPlatesPresentation
 		RenderParams d_render_params;
 		const GPlatesGui::RenderSettings &d_render_settings;
 		const std::set<GPlatesModel::FeatureId> &d_topological_sections;
+		const GPlatesAppLogic::TopologyUtils::resolved_topological_boundaries_networks_to_shared_sub_segments_map_type &d_all_resolved_topological_shared_sub_segments;
 		boost::optional<GPlatesGui::Colour> d_colour;
 		boost::optional<GPlatesMaths::Rotation> d_reconstruction_adjustment;
 		boost::optional<const GPlatesGui::symbol_map_type &> d_feature_type_symbol_map;
@@ -429,8 +436,12 @@ namespace GPlatesPresentation
 		 *
 		 * It is only valid during @a render.
 		 */
-		boost::optional<const rendered_geometries_spatial_partition_type::location_type &>
-				d_rendered_geometries_spatial_partition_location;
+		boost::optional<const rendered_geometries_spatial_partition_type::location_type &> d_rendered_geometries_spatial_partition_location;
+
+		/**
+		 * Shared boundary sub-segments of resolved topological boundaries and networks rendered in the current rendered geometry layer.
+		 */
+		std::set<GPlatesAppLogic::ResolvedTopologicalSharedSubSegment::non_null_ptr_type> d_resolved_topological_shared_sub_segments;
 
 
 		/**
@@ -558,6 +569,22 @@ namespace GPlatesPresentation
 		void
 		render_topological_network_velocities(
 				const GPlatesAppLogic::ResolvedTopologicalNetwork::non_null_ptr_to_const_type &topological_network);
+
+
+		/**
+		 * Add the shared sub-segments of a resolved topological boundary or network to be rendered later
+		 * (at the end of the current rendered geometry layer).
+		 */
+		void
+		add_topological_shared_sub_segments(
+				const GPlatesModel::FeatureHandle::iterator &resolved_topology_feature_property);
+
+		/**
+		 * Render shared sub-segments of resolved topological boundaries and networks
+		 * (rendered in the current rendered geometry layer).
+		 */
+		void
+		render_topological_shared_sub_segments();
 	};
 
 
