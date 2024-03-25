@@ -40,6 +40,7 @@ namespace GPlatesViewOperations
 	class RenderedCrossSymbol;
 	class RenderedEllipse;
 	class RenderedMultiPointOnSphere;
+	class RenderedMultiReconstructionGeometry;
 	class RenderedPointOnSphere;
 	class RenderedPolygonOnSphere;
 	class RenderedPolylineOnSphere;
@@ -162,6 +163,17 @@ namespace GPlatesViewOperations
 		void
 		visit_rendered_reconstruction_geometry(
 				const RenderedReconstructionGeometry &)
+		{  }
+
+		/**
+		 * This rendered geometry is a composite object as opposed to the others.
+		 *
+		 * It wraps/associates multiple @a GPlatesAppLogic::ReconstructionGeometry objects with a single rendered geometry.
+		 */
+		virtual
+		void
+		visit_rendered_multi_reconstruction_geometry(
+				const RenderedMultiReconstructionGeometry &)
 		{  }
 
 		virtual

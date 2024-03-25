@@ -277,10 +277,11 @@ namespace GPlatesAppLogic
 				const std::vector<ResolvedTopologicalBoundary::non_null_ptr_to_const_type> &resolved_topological_boundaries,
 				const std::vector<ResolvedTopologicalNetwork::non_null_ptr_to_const_type> &resolved_topological_networks);
 
+
 		/**
 		 * Typedef for a mapping from resolved topological boundaries and networks to their shared boundary sub-segments.
 		 *
-		 * Note: The map key is a feature property iterator instead of a ReconstructionGeometry (resolved topology) because
+		 * Note: The map key is a feature property iterator instead of a resolved topology (ReconstructionGeometry) because
 		 *       it's possible to have many reconstruction geometries referencing the same feature property since the
 		 *       topological features could have been resolved again (generating different reconstruction geometries) between
 		 *       when this map was created and when it is used to look up shared sub-segments.

@@ -385,6 +385,15 @@ namespace GPlatesViewOperations
 				RenderedGeometry rendered_geom);
 
 		/**
+		 * Creates a composite @a RenderedGeometry containing another @a RenderedGeometry
+		 * and multiple @a ReconstructionGeometry objects associated with it.
+		 */
+		RenderedGeometry
+		create_rendered_multi_reconstruction_geometry(
+				const std::vector<GPlatesAppLogic::ReconstructionGeometry::non_null_ptr_to_const_type> &reconstruction_geoms,
+				RenderedGeometry rendered_geom);
+
+		/**
 		 * Creates a @a RenderedGeometry for text.
 		 */
 		RenderedGeometry

@@ -37,6 +37,7 @@
 #include "RenderedCrossSymbol.h"
 #include "RenderedEllipse.h"
 #include "RenderedMultiPointOnSphere.h"
+#include "RenderedMultiReconstructionGeometry.h"
 #include "RenderedPointOnSphere.h"
 #include "RenderedPolygonOnSphere.h"
 #include "RenderedPolylineOnSphere.h"
@@ -561,6 +562,17 @@ GPlatesViewOperations::RenderedGeometryFactory::create_rendered_reconstruction_g
 {
 	RenderedGeometry::impl_ptr_type rendered_geom_impl(new RenderedReconstructionGeometry(
 			reconstruction_geom, rendered_geom));
+
+	return RenderedGeometry(rendered_geom_impl);
+}
+
+GPlatesViewOperations::RenderedGeometry
+GPlatesViewOperations::RenderedGeometryFactory::create_rendered_multi_reconstruction_geometry(
+		const std::vector<GPlatesAppLogic::ReconstructionGeometry::non_null_ptr_to_const_type> &reconstruction_geoms,
+		RenderedGeometry rendered_geom)
+{
+	RenderedGeometry::impl_ptr_type rendered_geom_impl(new RenderedMultiReconstructionGeometry(
+			reconstruction_geoms, rendered_geom));
 
 	return RenderedGeometry(rendered_geom_impl);
 }

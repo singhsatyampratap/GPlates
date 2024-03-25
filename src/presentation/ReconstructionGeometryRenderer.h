@@ -28,6 +28,7 @@
 #define GPLATES_PRESENTATION_RECONSTRUCTION_GEOMETRY_RENDERER_H
 
 #include <functional>
+#include <map>
 #include <set>
 #include <utility>
 #include <vector>
@@ -439,9 +440,14 @@ namespace GPlatesPresentation
 		boost::optional<const rendered_geometries_spatial_partition_type::location_type &> d_rendered_geometries_spatial_partition_location;
 
 		/**
-		 * Shared boundary sub-segments of resolved topological boundaries and networks rendered in the current rendered geometry layer.
+		 * Mapping from shared boundary sub-segments to their sharing resolved topological boundaries and networks
+		 * (rendered in the current rendered geometry layer).
+		 *
+		 * This is used to render all shared sub-segments at the end of a rendered geometry layer.
 		 */
-		std::set<GPlatesAppLogic::ResolvedTopologicalSharedSubSegment::non_null_ptr_type> d_resolved_topological_shared_sub_segments;
+		std::map<
+				GPlatesAppLogic::ResolvedTopologicalSharedSubSegment::non_null_ptr_type,
+				std::vector<GPlatesAppLogic::ReconstructionGeometry::non_null_ptr_to_const_type>> d_resolved_topological_shared_sub_segments_map;
 
 
 		/**
@@ -577,6 +583,7 @@ namespace GPlatesPresentation
 		 */
 		void
 		add_topological_shared_sub_segments(
+				const GPlatesAppLogic::ReconstructionGeometry::non_null_ptr_to_const_type &resolved_topology,
 				const GPlatesModel::FeatureHandle::iterator &resolved_topology_feature_property);
 
 		/**

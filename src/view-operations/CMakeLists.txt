@@ -65,6 +65,7 @@ set(srcs
     RenderedGeometryUtils.h
     RenderedGeometryVisitor.h
     RenderedMultiPointOnSphere.h
+    RenderedMultiReconstructionGeometry.h
     RenderedPointOnSphere.h
     RenderedPolygonOnSphere.h
     RenderedPolylineOnSphere.h
