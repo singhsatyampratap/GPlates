@@ -843,13 +843,12 @@ GPlatesPresentation::ReconstructionGeometryRenderer::visit(
 			GPLATES_ASSERTION_SOURCE);
 
 	GPlatesMaths::GeometryOnSphere::non_null_ptr_to_const_type rtg_geometry = rtg->resolved_topology_geometry();
+	const GPlatesMaths::GeometryType::Value rtg_geometry_type = GPlatesAppLogic::GeometryUtils::get_geometry_type(*rtg_geometry);
 
 	if (!d_render_settings.show_topological_sections() ||
 		!d_render_settings.show_topological_lines() ||
 		!d_render_settings.show_topological_polygons())
 	{
-		const GPlatesMaths::GeometryType::Value rtg_geometry_type = GPlatesAppLogic::GeometryUtils::get_geometry_type(*rtg_geometry);
-
 		// If hiding topological sections then avoid rendering resolved topological lines referenced by topologies.
 		if (!d_render_settings.show_topological_sections())
 		{
@@ -871,19 +870,23 @@ GPlatesPresentation::ReconstructionGeometryRenderer::visit(
 		}
 	}
 
-	// Add all shared boundary sub-segments of the resolved topological geometry.
-	// Only resolved topological polygons will have boundary sub-segments (resolved topological lines will get ignored).
-	// These boundary sub-segments will get rendered at the end of the current rendered geometry layer (in 'end_render()').
-	add_topological_shared_sub_segments(rtg, rtg->property());
-
-	// Return early if NOT filling topological polygons.
-	//
-	// Note: The boundary segments of topological polygons are no longer rendered as a polygon *outline* (as they were in GPlates <= 2.4).
-	//       Instead they're now rendered separately as sub-segments shared by topological polygons and networks in a separate post-layer render pass
-	//       (that renders on top of the *filled* polygon, if drawn).
-	if (!d_render_params.fill_polygons)
+	// Resolved topological *polygons* are handled differently than resolved topological *lines*.
+	if (rtg_geometry_type == GPlatesMaths::GeometryType::POLYGON)
 	{
-		return;
+		// Add all shared boundary sub-segments of the resolved topological boundary.
+		// Only resolved topological polygons will have boundary sub-segments (resolved topological lines do not).
+		// These boundary sub-segments will get rendered at the end of the current rendered geometry layer (in 'end_render()').
+		add_topological_shared_sub_segments(rtg, rtg->property());
+
+		// Return early if NOT filling topological polygons.
+		//
+		// Note: The boundary segments of topological polygons are no longer rendered as a polygon *outline* (as they were in GPlates <= 2.4).
+		//       Instead they're now rendered separately as sub-segments shared by topological polygons and networks in a separate post-layer render pass
+		//       (that renders on top of the *filled* polygon, if drawn).
+		if (!d_render_params.fill_polygons)
+		{
+			return;
+		}
 	}
 
 	GPlatesViewOperations::RenderedGeometry rendered_geometry =
@@ -2220,7 +2223,8 @@ GPlatesPresentation::ReconstructionGeometryRenderer::add_topological_shared_sub_
 	if (shared_sub_segment_infos_iter == d_all_resolved_topological_shared_sub_segments.end())
 	{
 		// Resolved topology not found in the map.
-		// Could just be a resolved topological *line* which does not have a boundary (and hence no shared sub-segments).
+		// This shouldn't happen if the resolved topology is a resolved topological polygon or network.
+		// If it happens then we'll just ignore the resolved topology.
 		return;
 	}
 
