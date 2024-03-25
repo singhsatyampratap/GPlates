@@ -79,6 +79,7 @@
 #include "view-operations/RenderedSquareSymbol.h"
 #include "view-operations/RenderedStrainMarkerSymbol.h"
 #include "view-operations/RenderedString.h"
+#include "view-operations/RenderedSubductionTeethPolyline.h"
 #include "view-operations/RenderedTangentialArrow.h"
 #include "view-operations/RenderedTriangleSymbol.h"
 
@@ -471,6 +472,95 @@ GPlatesGui::GlobeRenderedGeometryLayerPainter::visit_rendered_coloured_polyline_
 			vertex_colours.begin(),
 			vertex_colours.end(),
 			stream);
+}
+
+
+void
+GPlatesGui::GlobeRenderedGeometryLayerPainter::visit_rendered_subduction_teeth_polyline(
+		const GPlatesViewOperations::RenderedSubductionTeethPolyline &rendered_subduction_teeth_polyline)
+{
+	if (d_paint_region != PAINT_SURFACE)
+	{
+		return;
+	}
+
+	boost::optional<Colour> colour = get_vector_geometry_colour(rendered_subduction_teeth_polyline.get_colour());
+	if (!colour)
+	{
+		return;
+	}
+
+	// Convert colour from floats to bytes to use less vertex memory.
+	const rgba8_t rgba8_colour = Colour::to_rgba8(colour.get());
+
+	GPlatesMaths::PolylineOnSphere::non_null_ptr_to_const_type polyline = rendered_subduction_teeth_polyline.get_polyline_on_sphere();
+
+	// Get the stream for lines of the current line width.
+	const float line_width = rendered_subduction_teeth_polyline.get_line_width_hint() * LINE_WIDTH_ADJUSTMENT * d_scale;
+	stream_primitives_type &lines_stream = d_layer_painter->translucent_drawables_on_the_sphere.get_lines_stream(line_width);
+
+	// Paint the polyline.
+	paint_great_circle_arcs(
+			polyline->begin(),
+			polyline->end(),
+			rgba8_colour,
+			lines_stream);
+
+
+	const double spacing = d_inverse_zoom_factor * rendered_subduction_teeth_polyline.get_projected_teeth_spacing();
+	const double teeth_width = d_inverse_zoom_factor * rendered_subduction_teeth_polyline.get_projected_teeth_width();
+	const double teeth_height = rendered_subduction_teeth_polyline.get_teeth_height_to_width_ratio() * teeth_width;
+	// If overriding plate is on the right side then need to invert great circle arc normal (which is on the left).
+	const double overriding_normal_factor =
+			(rendered_subduction_teeth_polyline.get_subduction_polarity() == GPlatesViewOperations::RenderedSubductionTeethPolyline::SubductionPolarity::LEFT)
+			? 1.0
+			: -1.0;
+
+	// Get the stream for triangles (for the subduction teeth).
+	stream_primitives_type &teeth_stream = d_layer_painter->translucent_drawables_on_the_sphere.get_triangles_stream();
+	stream_primitives_type::Triangles stream_teeth(teeth_stream);
+	stream_teeth.begin_triangles();
+
+	// Paint the subduction teeth.
+	double arc_length_since_last_tooth = 0;
+	for (const auto &gca : *polyline)
+	{
+		if (gca.is_zero_length())
+		{
+			continue;
+		}
+
+		arc_length_since_last_tooth += gca.arc_length().dval();
+
+		while (arc_length_since_last_tooth > spacing)
+		{
+			const GPlatesMaths::Rotation tooth_rotation = GPlatesMaths::Rotation::create(
+					gca.rotation_axis(),
+					-(arc_length_since_last_tooth - spacing));
+
+			const GPlatesMaths::Vector3D tooth_base_midpoint(tooth_rotation * gca.end_point().position_vector());
+
+			const GPlatesMaths::UnitVector3D tooth_base_direction =
+					GPlatesMaths::cross(gca.rotation_axis(), tooth_base_midpoint).get_normalisation();
+
+			const GPlatesMaths::Vector3D tooth_normal = overriding_normal_factor * gca.rotation_axis();
+
+			const GPlatesMaths::Vector3D tooth_triangle_vertices[3] =
+			{
+				tooth_base_midpoint + teeth_height * tooth_normal,
+				tooth_base_midpoint - 0.5 * teeth_width * tooth_base_direction,
+				tooth_base_midpoint + 0.5 * teeth_width * tooth_base_direction,
+			};
+
+			stream_teeth.add_vertex(coloured_vertex_type(tooth_triangle_vertices[0], rgba8_colour));
+			stream_teeth.add_vertex(coloured_vertex_type(tooth_triangle_vertices[1], rgba8_colour));
+			stream_teeth.add_vertex(coloured_vertex_type(tooth_triangle_vertices[2], rgba8_colour));
+
+			arc_length_since_last_tooth -= spacing;
+		}
+	}
+
+	stream_teeth.end_triangles();
 }
 
 

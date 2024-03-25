@@ -66,6 +66,8 @@
 
 #include "data-mining/DataTable.h"
 
+#include "feature-visitors/PropertyValueFinder.h"
+
 #include "global/AssertionFailureException.h"
 #include "global/CompilerWarnings.h"
 #include "global/GPlatesAssert.h"
@@ -78,6 +80,12 @@
 
 #include "maths/CalculateVelocity.h"
 #include "maths/MathsUtils.h"
+
+#include "model/FeatureType.h"
+#include "model/PropertyName.h"
+
+#include "property-values/Enumeration.h"
+#include "property-values/EnumerationContent.h"
 
 #include "utils/ComponentManager.h"
 #include "utils/Profile.h"
@@ -2249,8 +2257,17 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_shared_s
 		const std::vector<GPlatesAppLogic::ReconstructionGeometry::non_null_ptr_to_const_type> &resolved_topologies =
 				shared_sub_segment_map_entry.second;
 
-		const GPlatesMaths::PolylineOnSphere::non_null_ptr_to_const_type shared_sub_segment_polyline =
+		// Shared sub-segment polyline.
+		GPlatesMaths::PolylineOnSphere::non_null_ptr_to_const_type shared_sub_segment_polyline =
 				shared_sub_segment->get_shared_sub_segment_geometry();
+		if (d_reconstruction_adjustment)
+		{
+			shared_sub_segment_polyline = d_reconstruction_adjustment.get() * shared_sub_segment_polyline;
+		}
+
+		// Shared sub-segment reconstruction geometry.
+		//
+		// Note: This is the full reconstruction geometry (not just the shared sub-segment part of it).
 		const GPlatesAppLogic::ReconstructionGeometry::non_null_ptr_to_const_type shared_sub_segment_reconstruction_geometry =
 				shared_sub_segment->get_reconstruction_geometry();
 
@@ -2258,14 +2275,30 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_shared_s
 		const GPlatesGui::ColourProxy shared_sub_segment_colour =
 				get_colour(shared_sub_segment_reconstruction_geometry, d_colour, d_style_adapter);
 
+		const boost::optional<SubductionPolarity> subduction_polarity =
+				get_subduction_polarity(shared_sub_segment_reconstruction_geometry);
+
 		// Create a RenderedGeometry for drawing the shared sub-segment.
-		GPlatesViewOperations::RenderedGeometry shared_sub_segment_rendered_geom =
-				GPlatesViewOperations::RenderedGeometryFactory::create_rendered_polyline_on_sphere(
-						d_reconstruction_adjustment ? d_reconstruction_adjustment.get() * shared_sub_segment_polyline : shared_sub_segment_polyline,
-						shared_sub_segment_colour,
-						d_render_params.reconstruction_line_width_hint,
-						d_render_params.fill_polylines,
-						d_render_params.fill_modulate_colour);
+		GPlatesViewOperations::RenderedGeometry shared_sub_segment_rendered_geom;
+		if (subduction_polarity)
+		{
+			// Create a polyline with subduction teeth.
+			shared_sub_segment_rendered_geom = GPlatesViewOperations::RenderedGeometryFactory::create_rendered_subduction_teeth_polyline(
+					shared_sub_segment_polyline,
+					subduction_polarity.get() == SubductionPolarity::LEFT,  // subduction_polarity_is_left
+					shared_sub_segment_colour,
+					d_render_params.reconstruction_line_width_hint);
+		}
+		else
+		{
+			// Create an ordinary polyline.
+			shared_sub_segment_rendered_geom = GPlatesViewOperations::RenderedGeometryFactory::create_rendered_polyline_on_sphere(
+					shared_sub_segment_polyline,
+					shared_sub_segment_colour,
+					d_render_params.reconstruction_line_width_hint,
+					d_render_params.fill_polylines,
+					d_render_params.fill_modulate_colour);
+		}
 
 		// Create a RenderedGeometry for storing the sharing resolved topologies (ReconstructionGeometry's) and
 		// a RenderedGeometry associated with them (for the shared sub-segment geometry).
@@ -2291,6 +2324,49 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_shared_s
 	}
 }
 
+
+boost::optional<GPlatesPresentation::ReconstructionGeometryRenderer::SubductionPolarity>
+GPlatesPresentation::ReconstructionGeometryRenderer::get_subduction_polarity(
+		const GPlatesAppLogic::ReconstructionGeometry::non_null_ptr_to_const_type &resolved_topological_section) const
+{
+	// Get the feature.
+	boost::optional<GPlatesModel::FeatureHandle::weak_ref> feature_ref =
+			GPlatesAppLogic::ReconstructionGeometryUtils::get_feature_ref(resolved_topological_section);
+	if (feature_ref)
+	{
+		// See if feature is a subduction zone.
+		static const GPlatesModel::FeatureType subduction_zone_type = GPlatesModel::FeatureType::create_gpml("SubductionZone");
+		if (feature_ref.get()->feature_type() == subduction_zone_type)
+		{
+			// See if has a 'gpml:subductionPolarity' property.
+			static const GPlatesModel::PropertyName subduction_polarity_property_name = GPlatesModel::PropertyName::create_gpml("subductionPolarity");
+			boost::optional<GPlatesPropertyValues::Enumeration::non_null_ptr_to_const_type> subduction_polarity_property_value =
+					GPlatesFeatureVisitors::get_property_value<GPlatesPropertyValues::Enumeration>(feature_ref.get(), subduction_polarity_property_name);
+			if (subduction_polarity_property_value)
+			{
+				// See if property is a 'gpml:SubductionPolarityEnumeration' enumeration.
+				static const GPlatesPropertyValues::EnumerationType subduction_polarity_enumeration_type =
+						GPlatesPropertyValues::EnumerationType::create_gpml("SubductionPolarityEnumeration");
+				if (subduction_polarity_enumeration_type.is_equal_to(subduction_polarity_property_value.get()->type()))
+				{
+					// See if polarity is 'Left' or 'Right'.
+					static const GPlatesPropertyValues::EnumerationContent subduction_polarity_enumeration_value_left("Left");
+					static const GPlatesPropertyValues::EnumerationContent subduction_polarity_enumeration_value_right("Right");
+					if (subduction_polarity_enumeration_value_left.is_equal_to(subduction_polarity_property_value.get()->value()))
+					{
+						return SubductionPolarity::LEFT;
+					}
+					if (subduction_polarity_enumeration_value_right.is_equal_to(subduction_polarity_property_value.get()->value()))
+					{
+						return SubductionPolarity::RIGHT;
+					}
+				}
+			}
+		}
+	}
+
+	return boost::none;
+}
 
 // Suppress warning with boost::variant with Boost 1.34 and g++ 4.2.
 // This is here at the end of the file because the problem resides in a template

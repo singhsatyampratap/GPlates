@@ -125,6 +125,23 @@ namespace GPlatesViewOperations
 		const float DEFAULT_RATIO_ARROWLINE_WIDTH_TO_ARROWHEAD_SIZE = 0.2f;
 
 		/**
+		 * Determines the default width of a subduction tooth relative to the globe radius when the globe fills the viewport window.
+		 * This is a view-dependent scalar.
+		 */
+		const float DEFAULT_SUBDUCTION_TEETH_WIDTH_TO_GLOBE_RADIUS = 0.04f;
+
+		/**
+		 * Determines the default spacing between subduction teeth relative to the globe radius when the globe fills the viewport window.
+		 * This is a view-dependent scalar.
+		 */
+		const float DEFAULT_SUBDUCTION_TEETH_SPACING_TO_GLOBE_RADIUS = 2 * DEFAULT_SUBDUCTION_TEETH_WIDTH_TO_GLOBE_RADIUS;
+
+		/**
+		 * Determines the default height-to-width radio of a subduction tooth .
+		 */
+		const float DEFAULT_SUBDUCTION_TEETH_HEIGHT_TO_WIDTH_RATIO = 2.0f / 3.0f;
+
+		/**
 		 * Determines the size of symbol rendered geometries.
 		 */
 		const unsigned int DEFAULT_SYMBOL_SIZE = 1;
@@ -445,6 +462,21 @@ namespace GPlatesViewOperations
 				const GPlatesGui::ColourProxy &colour = DEFAULT_COLOUR,
 				const float ratio_arrowhead_size_to_globe_radius = DEFAULT_RATIO_ARROWHEAD_SIZE_TO_GLOBE_RADIUS,
 				const float arrowline_width_hint = DEFAULT_LINE_WIDTH_HINT);
+
+		/**
+		 * Creates a @a RenderedGeometry for a @a PolylineOnSphere that has subduction teeth.
+		 *
+		 * If @a subduction_polarity_is_left is true then the overriding plate is on the left (otherwise on the right).
+		 */
+		RenderedGeometry
+		create_rendered_subduction_teeth_polyline(
+				GPlatesMaths::PolylineOnSphere::non_null_ptr_to_const_type polyline,
+				bool subduction_polarity_is_left,
+				const GPlatesGui::ColourProxy &colour = DEFAULT_COLOUR,
+				float line_width_hint = DEFAULT_LINE_WIDTH_HINT,
+				float teeth_spacing_to_globe_radius = DEFAULT_SUBDUCTION_TEETH_SPACING_TO_GLOBE_RADIUS,
+				float teeth_width_to_globe_radius = DEFAULT_SUBDUCTION_TEETH_WIDTH_TO_GLOBE_RADIUS,
+				float teeth_height_to_width_ratio = DEFAULT_SUBDUCTION_TEETH_HEIGHT_TO_WIDTH_RATIO);
 
 
 		/**

@@ -49,10 +49,11 @@ namespace GPlatesViewOperations
 	class RenderedResolvedRaster;
 	class RenderedResolvedScalarField3D;
 	class RenderedSmallCircle;
-	class RenderedSmallCircleArc;	
+	class RenderedSmallCircleArc;
 	class RenderedSquareSymbol;
 	class RenderedStrainMarkerSymbol;
 	class RenderedString;
+	class RenderedSubductionTeethPolyline;
 	class RenderedTangentialArrow;
 	class RenderedTriangleSymbol;
 
@@ -216,6 +217,12 @@ namespace GPlatesViewOperations
 		void
 		visit_rendered_string(
 				const RenderedString &)
+		{  }
+
+		virtual
+		void
+		visit_rendered_subduction_teeth_polyline(
+				const RenderedSubductionTeethPolyline &)
 		{  }
 
 		/**

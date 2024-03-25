@@ -180,6 +180,11 @@ namespace GPlatesGui
 
 		virtual
 		void
+		visit_rendered_subduction_teeth_polyline(
+				const GPlatesViewOperations::RenderedSubductionTeethPolyline &rendered_subduction_teeth_polyline);
+
+		virtual
+		void
 		visit_rendered_polygon_on_sphere(
 				const GPlatesViewOperations::RenderedPolygonOnSphere &rendered_polygon_on_sphere);
 

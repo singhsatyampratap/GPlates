@@ -50,6 +50,7 @@
 #include "RenderedSquareSymbol.h"
 #include "RenderedStrainMarkerSymbol.h"
 #include "RenderedString.h"
+#include "RenderedSubductionTeethPolyline.h"
 #include "RenderedTangentialArrow.h"
 #include "RenderedTriangleSymbol.h"
 
@@ -655,6 +656,30 @@ GPlatesViewOperations::RenderedGeometryFactory::create_rendered_arrowed_polyline
 
 	return RenderedGeometry(rendered_geom_impl);		
 
+}
+
+GPlatesViewOperations::RenderedGeometry
+GPlatesViewOperations::RenderedGeometryFactory::create_rendered_subduction_teeth_polyline(
+		GPlatesMaths::PolylineOnSphere::non_null_ptr_to_const_type polyline,
+		bool subduction_polarity_is_left,
+		const GPlatesGui::ColourProxy &colour,
+		float line_width_hint,
+		float teeth_spacing_to_globe_radius,
+		float teeth_width_to_globe_radius,
+		float teeth_height_to_width_ratio)
+{
+	RenderedGeometry::impl_ptr_type rendered_geom_impl(new RenderedSubductionTeethPolyline(
+		polyline,
+		subduction_polarity_is_left
+				? RenderedSubductionTeethPolyline::SubductionPolarity::LEFT
+				: RenderedSubductionTeethPolyline::SubductionPolarity::RIGHT,
+		colour,
+		line_width_hint,
+		teeth_spacing_to_globe_radius,
+		teeth_width_to_globe_radius,
+		teeth_height_to_width_ratio));
+
+	return RenderedGeometry(rendered_geom_impl);
 }
 
 GPlatesViewOperations::RenderedGeometry

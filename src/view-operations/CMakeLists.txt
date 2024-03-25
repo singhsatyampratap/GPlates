@@ -78,6 +78,7 @@ set(srcs
     RenderedSquareSymbol.h
     RenderedStrainMarkerSymbol.h
     RenderedString.h
+    RenderedSubductionTeethPolyline.h
     RenderedTangentialArrow.h
     RenderedTriangleSymbol.h
     ScalarField3DRenderParameters.cc
