@@ -3062,6 +3062,10 @@ namespace GPlatesPresentation
 					reconstruction_layer_geometry_parameters_tag("line_width_hint"));
 			scribe.save(
 					TRANSCRIBE_SOURCE,
+					rendered_geometry_parameters.get_reconstruction_layer_topology_size_multiplier(),
+					reconstruction_layer_geometry_parameters_tag("topology_size_multiplier"));
+			scribe.save(
+					TRANSCRIBE_SOURCE,
 					rendered_geometry_parameters.get_reconstruction_layer_ratio_arrow_unit_vector_direction_to_globe_radius(),
 					reconstruction_layer_geometry_parameters_tag("ratio_arrow_unit_vector_direction_to_globe_radius"));
 			scribe.save(
@@ -3096,6 +3100,15 @@ namespace GPlatesPresentation
 					reconstruction_layer_geometry_parameters_tag("line_width_hint")))
 			{
 				rendered_geometry_parameters.set_reconstruction_layer_line_width_hint(reconstruction_layer_line_width_hint);
+			}
+
+			float reconstruction_layer_topology_size_multiplier;
+			if (scribe.transcribe(
+					TRANSCRIBE_SOURCE,
+					reconstruction_layer_topology_size_multiplier,
+					reconstruction_layer_geometry_parameters_tag("topology_size_multiplier")))
+			{
+				rendered_geometry_parameters.set_reconstruction_layer_topology_size_multiplier(reconstruction_layer_topology_size_multiplier);
 			}
 
 			float reconstruction_layer_ratio_arrow_unit_vector_direction_to_globe_radius;

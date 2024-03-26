@@ -106,6 +106,7 @@ namespace GPlatesPresentation
 
 			float reconstruction_line_width_hint;
 			float reconstruction_point_size_hint;
+			float reconstruction_topology_size_multiplier;
 			bool fill_polygons;
 			bool fill_polylines;
 

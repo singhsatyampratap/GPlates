@@ -198,7 +198,8 @@ namespace
 			const GPlatesPresentation::ReconstructionGeometryRenderer::RenderParams &render_params,
 			const GPlatesGui::ColourProxy &colour_proxy,
 			const boost::optional<GPlatesMaths::Rotation> &rotation = boost::none,
-			boost::optional<const GPlatesGui::symbol_map_type &> feature_type_symbol_map = boost::none)
+			boost::optional<const GPlatesGui::symbol_map_type &> feature_type_symbol_map = boost::none,
+			float line_width_and_point_size_multiplier = 1.0f)
 	{
 		boost::optional<GPlatesGui::Symbol> symbol = get_symbol(
 				feature_type_symbol_map, reconstruction_geometry);
@@ -208,8 +209,8 @@ namespace
 				GPlatesViewOperations::RenderedGeometryFactory::create_rendered_geometry_on_sphere(
 						rotation ? rotation.get() * geometry : geometry,
 						colour_proxy,
-						render_params.reconstruction_point_size_hint,
-						render_params.reconstruction_line_width_hint,
+						render_params.reconstruction_point_size_hint * line_width_and_point_size_multiplier,
+						render_params.reconstruction_line_width_hint * line_width_and_point_size_multiplier,
 						render_params.fill_polygons,
 						render_params.fill_polylines,
 						render_params.fill_modulate_colour,
@@ -236,6 +237,7 @@ GPlatesPresentation::ReconstructionGeometryRenderer::RenderParams::RenderParams(
 		bool fill_polylines_) :
 	reconstruction_line_width_hint(rendered_geometry_parameters_.get_reconstruction_layer_line_width_hint()),
 	reconstruction_point_size_hint(rendered_geometry_parameters_.get_reconstruction_layer_point_size_hint()),
+	reconstruction_topology_size_multiplier(rendered_geometry_parameters_.get_reconstruction_layer_topology_size_multiplier()),
 	fill_polygons(fill_polygons_),
 	fill_polylines(fill_polylines_),
 	fill_modulate_colour(1, 1, 1, 1),
@@ -902,7 +904,10 @@ GPlatesPresentation::ReconstructionGeometryRenderer::visit(
 				rtg_geometry, 
 				rtg, 
 				d_render_params, 
-				get_colour(rtg, d_colour, d_style_adapter));
+				get_colour(rtg, d_colour, d_style_adapter),
+				d_reconstruction_adjustment,
+				d_feature_type_symbol_map,
+				d_render_params.reconstruction_topology_size_multiplier/*line_width_and_point_size_multiplier*/);
 
 	// The rendered geometry represents a geometry-on-sphere so render to the spatial partition.
 	render_reconstruction_geometry_on_sphere(rendered_geometry);
@@ -2116,7 +2121,8 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_network_
 				render_params,
 				get_colour(rtn, d_colour, d_style_adapter),
 				d_reconstruction_adjustment,
-				d_feature_type_symbol_map);
+				d_feature_type_symbol_map,
+				d_render_params.reconstruction_topology_size_multiplier/*line_width_and_point_size_multiplier*/);
 
 	// The rendered geometry is the network boundary, which is on the sphere and is the bounds of the
 	// resolved topological network, so we can render it to the spatial partition (to get view-frustum culling).
@@ -2159,7 +2165,8 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_network_
 					render_params,
 					get_colour(rigid_block_rfg, d_colour, d_style_adapter),
 					d_reconstruction_adjustment,
-					d_feature_type_symbol_map);
+					d_feature_type_symbol_map,
+					d_render_params.reconstruction_topology_size_multiplier/*line_width_and_point_size_multiplier*/);
 
 		// The rendered geometry is a rigid interior block, which is on the sphere and within the bounds of the
 		// resolved topological network, so we can render it to the spatial partition (to get view-frustum culling).
@@ -2287,7 +2294,7 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_shared_s
 					shared_sub_segment_polyline,
 					subduction_polarity.get() == SubductionPolarity::LEFT,  // subduction_polarity_is_left
 					shared_sub_segment_colour,
-					d_render_params.reconstruction_line_width_hint);
+					d_render_params.reconstruction_line_width_hint * d_render_params.reconstruction_topology_size_multiplier);
 		}
 		else
 		{
@@ -2295,7 +2302,7 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_shared_s
 			shared_sub_segment_rendered_geom = GPlatesViewOperations::RenderedGeometryFactory::create_rendered_polyline_on_sphere(
 					shared_sub_segment_polyline,
 					shared_sub_segment_colour,
-					d_render_params.reconstruction_line_width_hint,
+					d_render_params.reconstruction_line_width_hint * d_render_params.reconstruction_topology_size_multiplier,
 					d_render_params.fill_polylines,
 					d_render_params.fill_modulate_colour);
 		}
