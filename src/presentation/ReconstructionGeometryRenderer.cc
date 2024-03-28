@@ -907,6 +907,7 @@ GPlatesPresentation::ReconstructionGeometryRenderer::visit(
 				get_colour(rtg, d_colour, d_style_adapter),
 				d_reconstruction_adjustment,
 				d_feature_type_symbol_map,
+				// Topological boundary outlines and topological lines get rendered with a different thickness...
 				d_render_params.reconstruction_topology_size_multiplier/*line_width_and_point_size_multiplier*/);
 
 	// The rendered geometry represents a geometry-on-sphere so render to the spatial partition.
@@ -2166,6 +2167,7 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_network_
 					get_colour(rigid_block_rfg, d_colour, d_style_adapter),
 					d_reconstruction_adjustment,
 					d_feature_type_symbol_map,
+					// Topological network boundaries get rendered with a different thickness...
 					d_render_params.reconstruction_topology_size_multiplier/*line_width_and_point_size_multiplier*/);
 
 		// The rendered geometry is a rigid interior block, which is on the sphere and within the bounds of the
@@ -2294,6 +2296,7 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_shared_s
 					shared_sub_segment_polyline,
 					subduction_polarity.get() == SubductionPolarity::LEFT,  // subduction_polarity_is_left
 					shared_sub_segment_colour,
+					// Topological plate/network boundaries get rendered with a different thickness...
 					d_render_params.reconstruction_line_width_hint * d_render_params.reconstruction_topology_size_multiplier);
 		}
 		else
@@ -2302,6 +2305,7 @@ GPlatesPresentation::ReconstructionGeometryRenderer::render_topological_shared_s
 			shared_sub_segment_rendered_geom = GPlatesViewOperations::RenderedGeometryFactory::create_rendered_polyline_on_sphere(
 					shared_sub_segment_polyline,
 					shared_sub_segment_colour,
+					// Topological plate/network boundaries get rendered with a different thickness...
 					d_render_params.reconstruction_line_width_hint * d_render_params.reconstruction_topology_size_multiplier,
 					d_render_params.fill_polylines,
 					d_render_params.fill_modulate_colour);
