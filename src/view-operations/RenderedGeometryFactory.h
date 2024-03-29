@@ -125,19 +125,18 @@ namespace GPlatesViewOperations
 		const float DEFAULT_RATIO_ARROWLINE_WIDTH_TO_ARROWHEAD_SIZE = 0.2f;
 
 		/**
-		 * Determines the default width of a subduction tooth relative to the globe radius when the globe fills the viewport window.
+		 * Determines the default width of a subduction tooth (in device-independent pixels).
 		 * This is a view-dependent scalar.
 		 */
-		const float DEFAULT_SUBDUCTION_TEETH_WIDTH_TO_GLOBE_RADIUS = 0.04f;
+		const float DEFAULT_SUBDUCTION_TEETH_WIDTH_IN_PIXELS = 8.0f;
 
 		/**
-		 * Determines the default spacing between subduction teeth relative to the globe radius when the globe fills the viewport window.
-		 * This is a view-dependent scalar.
+		 * Determines the default spacing-to-width ratio of subduction teeth.
 		 */
-		const float DEFAULT_SUBDUCTION_TEETH_SPACING_TO_GLOBE_RADIUS = 2 * DEFAULT_SUBDUCTION_TEETH_WIDTH_TO_GLOBE_RADIUS;
+		const float DEFAULT_SUBDUCTION_TEETH_SPACING_TO_WIDTH_RATIO = 2.0;
 
 		/**
-		 * Determines the default height-to-width radio of a subduction tooth .
+		 * Determines the default height-to-width ratio of a subduction tooth .
 		 */
 		const float DEFAULT_SUBDUCTION_TEETH_HEIGHT_TO_WIDTH_RATIO = 2.0f / 3.0f;
 
@@ -474,8 +473,8 @@ namespace GPlatesViewOperations
 				bool subduction_polarity_is_left,
 				const GPlatesGui::ColourProxy &colour = DEFAULT_COLOUR,
 				float line_width_hint = DEFAULT_LINE_WIDTH_HINT,
-				float teeth_spacing_to_globe_radius = DEFAULT_SUBDUCTION_TEETH_SPACING_TO_GLOBE_RADIUS,
-				float teeth_width_to_globe_radius = DEFAULT_SUBDUCTION_TEETH_WIDTH_TO_GLOBE_RADIUS,
+				float teeth_width_in_pixels = DEFAULT_SUBDUCTION_TEETH_WIDTH_IN_PIXELS,
+				float teeth_spacing_to_width_ratio = DEFAULT_SUBDUCTION_TEETH_SPACING_TO_WIDTH_RATIO,
 				float teeth_height_to_width_ratio = DEFAULT_SUBDUCTION_TEETH_HEIGHT_TO_WIDTH_RATIO);
 
 

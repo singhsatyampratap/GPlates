@@ -128,6 +128,7 @@ const float GPlatesGui::GlobeRenderedGeometryLayerPainter::LINE_WIDTH_ADJUSTMENT
 GPlatesGui::GlobeRenderedGeometryLayerPainter::GlobeRenderedGeometryLayerPainter(
 		const GPlatesViewOperations::RenderedGeometryLayer &rendered_geometry_layer,
 		const double &inverse_viewport_zoom_factor,
+		const double &device_independent_pixel_to_world_space_ratio,
 		const GlobeVisibilityTester &visibility_tester,
 		ColourScheme::non_null_ptr_type colour_scheme,
 		PaintRegionType paint_region,
@@ -136,6 +137,7 @@ GPlatesGui::GlobeRenderedGeometryLayerPainter::GlobeRenderedGeometryLayerPainter
 		bool improve_performance_reduce_quality_hint) :
 	d_rendered_geometry_layer(rendered_geometry_layer),
 	d_inverse_zoom_factor(inverse_viewport_zoom_factor),
+	d_device_independent_pixel_to_world_space_ratio(device_independent_pixel_to_world_space_ratio),
 	d_visibility_tester(visibility_tester),
 	d_colour_scheme(colour_scheme),
 	d_scale(1.0f),
@@ -507,9 +509,9 @@ GPlatesGui::GlobeRenderedGeometryLayerPainter::visit_rendered_subduction_teeth_p
 			lines_stream);
 
 
-	const double spacing = d_inverse_zoom_factor * rendered_subduction_teeth_polyline.get_projected_teeth_spacing();
-	const double teeth_width = d_inverse_zoom_factor * rendered_subduction_teeth_polyline.get_projected_teeth_width();
-	const double teeth_height = rendered_subduction_teeth_polyline.get_teeth_height_to_width_ratio() * teeth_width;
+	const double teeth_width = d_device_independent_pixel_to_world_space_ratio * rendered_subduction_teeth_polyline.get_teeth_width_in_pixels();
+	const double teeth_spacing = teeth_width * rendered_subduction_teeth_polyline.get_teeth_spacing_to_width_ratio();
+	const double teeth_height = teeth_width * rendered_subduction_teeth_polyline.get_teeth_height_to_width_ratio();
 	// If overriding plate is on the right side then need to invert great circle arc normal (which is on the left).
 	const double overriding_normal_factor =
 			(rendered_subduction_teeth_polyline.get_subduction_polarity() == GPlatesViewOperations::RenderedSubductionTeethPolyline::SubductionPolarity::LEFT)
@@ -532,11 +534,11 @@ GPlatesGui::GlobeRenderedGeometryLayerPainter::visit_rendered_subduction_teeth_p
 
 		arc_length_since_last_tooth += gca.arc_length().dval();
 
-		while (arc_length_since_last_tooth > spacing)
+		while (arc_length_since_last_tooth > teeth_spacing)
 		{
 			const GPlatesMaths::Rotation tooth_rotation = GPlatesMaths::Rotation::create(
 					gca.rotation_axis(),
-					-(arc_length_since_last_tooth - spacing));
+					-(arc_length_since_last_tooth - teeth_spacing));
 
 			const GPlatesMaths::Vector3D tooth_base_midpoint(tooth_rotation * gca.end_point().position_vector());
 
@@ -556,7 +558,7 @@ GPlatesGui::GlobeRenderedGeometryLayerPainter::visit_rendered_subduction_teeth_p
 			stream_teeth.add_vertex(coloured_vertex_type(tooth_triangle_vertices[1], rgba8_colour));
 			stream_teeth.add_vertex(coloured_vertex_type(tooth_triangle_vertices[2], rgba8_colour));
 
-			arc_length_since_last_tooth -= spacing;
+			arc_length_since_last_tooth -= teeth_spacing;
 		}
 	}
 

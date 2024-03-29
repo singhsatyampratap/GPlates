@@ -86,6 +86,7 @@ namespace GPlatesGui
 				const GPlatesViewOperations::RenderedGeometryLayer &rendered_geometry_layer,
 				const GPlatesOpenGL::GLVisualLayers::non_null_ptr_type &gl_visual_layers,
 				const double &inverse_viewport_zoom_factor,
+				const double &device_independent_pixel_to_map_space_ratio,
 				ColourScheme::non_null_ptr_type colour_scheme);
 
 
@@ -417,6 +418,9 @@ namespace GPlatesGui
 		GPlatesOpenGL::GLVisualLayers::non_null_ptr_type d_gl_visual_layers;
 
 		const double d_inverse_zoom_factor;
+
+		//! The size of one device-independent pixel in (post projection) map space units.
+		const double d_device_independent_pixel_to_map_space_ratio;
 
 		//! For assigning colours to RenderedGeometry
 		ColourScheme::non_null_ptr_type d_colour_scheme;

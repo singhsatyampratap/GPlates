@@ -664,8 +664,8 @@ GPlatesViewOperations::RenderedGeometryFactory::create_rendered_subduction_teeth
 		bool subduction_polarity_is_left,
 		const GPlatesGui::ColourProxy &colour,
 		float line_width_hint,
-		float teeth_spacing_to_globe_radius,
-		float teeth_width_to_globe_radius,
+		float teeth_width_in_pixels,
+		float teeth_spacing_to_width_ratio,
 		float teeth_height_to_width_ratio)
 {
 	RenderedGeometry::impl_ptr_type rendered_geom_impl(new RenderedSubductionTeethPolyline(
@@ -675,8 +675,8 @@ GPlatesViewOperations::RenderedGeometryFactory::create_rendered_subduction_teeth
 				: RenderedSubductionTeethPolyline::SubductionPolarity::RIGHT,
 		colour,
 		line_width_hint,
-		teeth_spacing_to_globe_radius,
-		teeth_width_to_globe_radius,
+		teeth_width_in_pixels,
+		teeth_spacing_to_width_ratio,
 		teeth_height_to_width_ratio));
 
 	return RenderedGeometry(rendered_geom_impl);

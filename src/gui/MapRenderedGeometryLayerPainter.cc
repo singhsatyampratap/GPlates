@@ -277,11 +277,13 @@ GPlatesGui::MapRenderedGeometryLayerPainter::MapRenderedGeometryLayerPainter(
 		const GPlatesViewOperations::RenderedGeometryLayer &rendered_geometry_layer,
 		const GPlatesOpenGL::GLVisualLayers::non_null_ptr_type &gl_visual_layers,
 		const double &inverse_viewport_zoom_factor,
+		const double &device_independent_pixel_to_map_space_ratio,
 		ColourScheme::non_null_ptr_type colour_scheme) :
 	d_map_projection(map_projection),
 	d_rendered_geometry_layer(rendered_geometry_layer),
 	d_gl_visual_layers(gl_visual_layers),
 	d_inverse_zoom_factor(inverse_viewport_zoom_factor),
+	d_device_independent_pixel_to_map_space_ratio(device_independent_pixel_to_map_space_ratio),
 	d_colour_scheme(colour_scheme),
 	d_scale(1.0f),
 	d_dateline_wrapper(
@@ -712,9 +714,9 @@ GPlatesGui::MapRenderedGeometryLayerPainter::visit_rendered_subduction_teeth_pol
 	// Used to add line strips to the stream.
 	stream_primitives_type::LineStrips stream_line_strips(lines_stream);
 
-	const double spacing = GLOBE_TO_MAP_SCALE_FACTOR * d_inverse_zoom_factor * rendered_subduction_teeth_polyline.get_projected_teeth_spacing();
-	const double teeth_width = GLOBE_TO_MAP_SCALE_FACTOR * d_inverse_zoom_factor * rendered_subduction_teeth_polyline.get_projected_teeth_width();
-	const double teeth_height = rendered_subduction_teeth_polyline.get_teeth_height_to_width_ratio() * teeth_width;
+	const double teeth_width = d_device_independent_pixel_to_map_space_ratio * rendered_subduction_teeth_polyline.get_teeth_width_in_pixels();
+	const double teeth_spacing = teeth_width * rendered_subduction_teeth_polyline.get_teeth_spacing_to_width_ratio();
+	const double teeth_height = teeth_width * rendered_subduction_teeth_polyline.get_teeth_height_to_width_ratio();
 	// If overriding plate is on the left side then need to segment normal (which is on the right - see 'QLineF::normalVector()').
 	const double overriding_normal_factor =
 			(rendered_subduction_teeth_polyline.get_subduction_polarity() == GPlatesViewOperations::RenderedSubductionTeethPolyline::SubductionPolarity::RIGHT)
@@ -766,14 +768,14 @@ GPlatesGui::MapRenderedGeometryLayerPainter::visit_rendered_subduction_teeth_pol
 				const double inv_segment_length = 1.0 / segment_length;
 
 				length_since_last_tooth += segment_length;
-				while (length_since_last_tooth > spacing)
+				while (length_since_last_tooth > teeth_spacing)
 				{
 					if (GPlatesMaths::are_almost_exactly_equal(segment_length, 0))
 					{
 						continue;
 					}
 
-					const double interp = inv_segment_length * (segment_length - (length_since_last_tooth - spacing));
+					const double interp = inv_segment_length * (segment_length - (length_since_last_tooth - teeth_spacing));
 					const QPointF tooth_base_midpoint = segment.pointAt(interp);
 
 					const QPointF tooth_base_direction(
@@ -796,7 +798,7 @@ GPlatesGui::MapRenderedGeometryLayerPainter::visit_rendered_subduction_teeth_pol
 					stream_teeth.add_vertex(coloured_vertex_type(tooth_triangle_vertices[1].x(), tooth_triangle_vertices[1].y(), 0/*z*/, rgba8_colour));
 					stream_teeth.add_vertex(coloured_vertex_type(tooth_triangle_vertices[2].x(), tooth_triangle_vertices[2].y(), 0/*z*/, rgba8_colour));
 
-					length_since_last_tooth -= spacing;
+					length_since_last_tooth -= teeth_spacing;
 				}
 
 				prev_vertex = &vertex;

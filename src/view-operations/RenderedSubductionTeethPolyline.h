@@ -45,15 +45,15 @@ namespace GPlatesViewOperations
 				SubductionPolarity subduction_polarity,
 				const GPlatesGui::ColourProxy &colour,
 				float line_width_hint,
-				float projected_teeth_spacing,
-				float projected_teeth_width,
+				float teeth_width_in_pixels,
+				float teeth_spacing_to_width_ratio,
 				float teeth_height_to_width_ratio) :
 		d_polyline_on_sphere(polyline_on_sphere),
 		d_subduction_polarity(subduction_polarity),
 		d_colour(colour),
 		d_line_width_hint(line_width_hint),
-		d_projected_teeth_spacing(projected_teeth_spacing),
-		d_projected_teeth_width(projected_teeth_width),
+		d_teeth_spacing_to_width_ratio(teeth_spacing_to_width_ratio),
+		d_teeth_width_in_pixels(teeth_width_in_pixels),
 		d_teeth_height_to_width_ratio(teeth_height_to_width_ratio)
 		{  }
 
@@ -99,22 +99,24 @@ namespace GPlatesViewOperations
 			return d_colour;
 		}
 
+		//! The line width (in device-independent pixels).
 		float
 		get_line_width_hint() const
 		{
 			return d_line_width_hint;
 		}
 
+		//! The width of a tooth (in device-independent pixels).
 		float
-		get_projected_teeth_spacing() const
+		get_teeth_width_in_pixels() const
 		{
-			return d_projected_teeth_spacing;
+			return d_teeth_width_in_pixels;
 		}
 
 		float
-		get_projected_teeth_width() const
+		get_teeth_spacing_to_width_ratio() const
 		{
-			return d_projected_teeth_width;
+			return d_teeth_spacing_to_width_ratio;
 		}
 
 		float
@@ -128,8 +130,8 @@ namespace GPlatesViewOperations
 		SubductionPolarity d_subduction_polarity;
 		GPlatesGui::ColourProxy d_colour;
 		float d_line_width_hint;
-		float d_projected_teeth_spacing;
-		float d_projected_teeth_width;
+		float d_teeth_width_in_pixels;
+		float d_teeth_spacing_to_width_ratio;
 		float d_teeth_height_to_width_ratio;
 	};
 }
