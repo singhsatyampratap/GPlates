@@ -128,6 +128,15 @@ namespace
 
 	// Variables for drawing velocity arrows.
 	const float GLOBE_TO_MAP_SCALE_FACTOR = 180.;
+
+	/**
+	 * Max arrowhead size for arrowed polylines (in post-projection space).
+	 *
+	 * Ensures the arrowheads don't get too big when the map is small in the viewport resulting
+	 * in the vertices of polyline being close together (and causing arrowheads, at each vertex, to clump).
+	 */
+	const double MAX_ARROWED_POLYLINE_ARROWHEAD_SIZE = 0.005 * 180;
+
 	const float MAP_VELOCITY_SCALE_FACTOR = 3.0;
 	const double ARROWHEAD_BASE_HEIGHT_RATIO = 0.5;
 
@@ -714,7 +723,7 @@ GPlatesGui::MapRenderedGeometryLayerPainter::visit_rendered_subduction_teeth_pol
 	// Used to add line strips to the stream.
 	stream_primitives_type::LineStrips stream_line_strips(lines_stream);
 
-	const double teeth_width = d_device_independent_pixel_to_map_space_ratio * rendered_subduction_teeth_polyline.get_teeth_width_in_pixels();
+	const double teeth_width = d_device_independent_pixel_to_map_space_ratio * d_scale * rendered_subduction_teeth_polyline.get_teeth_width_in_pixels();
 	const double teeth_spacing = teeth_width * rendered_subduction_teeth_polyline.get_teeth_spacing_to_width_ratio();
 	const double teeth_height = teeth_width * rendered_subduction_teeth_polyline.get_teeth_height_to_width_ratio();
 	// If overriding plate is on the left side then need to segment normal (which is on the right - see 'QLineF::normalVector()').
@@ -1860,21 +1869,16 @@ GPlatesGui::MapRenderedGeometryLayerPainter::visit_rendered_arrowed_polyline(
 	// Convert colour from floats to bytes to use less vertex memory.
 	const rgba8_t rgba8_color = Colour::to_rgba8(colour.get());
 
-	GPlatesMaths::PolylineOnSphere::non_null_ptr_to_const_type polyline =
-			rendered_arrowed_polyline.get_polyline_on_sphere();
+	GPlatesMaths::PolylineOnSphere::non_null_ptr_to_const_type polyline = rendered_arrowed_polyline.get_polyline_on_sphere();
 
-	double arrowhead_size = d_inverse_zoom_factor * rendered_arrowed_polyline.get_arrowhead_projected_size();
-	if (arrowhead_size > rendered_arrowed_polyline.get_max_arrowhead_size())
+	double arrowhead_size = d_device_independent_pixel_to_map_space_ratio * d_scale * rendered_arrowed_polyline.get_arrowhead_size_in_pixels();
+	if (arrowhead_size > MAX_ARROWED_POLYLINE_ARROWHEAD_SIZE)
 	{
-		arrowhead_size = rendered_arrowed_polyline.get_max_arrowhead_size();
+		arrowhead_size = MAX_ARROWED_POLYLINE_ARROWHEAD_SIZE;
 	}
-	// Adjust the arrow head size for the map view.
-	arrowhead_size *= GLOBE_TO_MAP_SCALE_FACTOR;
 
 	const float line_width = rendered_arrowed_polyline.get_arrowline_width_hint() * LINE_WIDTH_ADJUSTMENT * d_scale;
-
-	stream_primitives_type &lines_stream =
-			d_layer_painter->translucent_drawables_on_the_sphere.get_lines_stream(line_width);
+	stream_primitives_type &lines_stream = d_layer_painter->translucent_drawables_on_the_sphere.get_lines_stream(line_width);
 
 	paint_line_geometry<GPlatesMaths::PolylineOnSphere>(polyline, rgba8_color, lines_stream, arrowhead_size);
 }

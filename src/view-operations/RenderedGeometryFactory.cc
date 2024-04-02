@@ -641,18 +641,13 @@ GPlatesViewOperations::RenderedGeometryFactory::create_rendered_string(
 
 GPlatesViewOperations::RenderedGeometry
 GPlatesViewOperations::RenderedGeometryFactory::create_rendered_arrowed_polyline(
-	GPlatesMaths::PolylineOnSphere::non_null_ptr_to_const_type points,
-	const GPlatesGui::ColourProxy &colour,
-	const float ratio_arrowhead_size_to_globe_radius,
-	const float arrowline_width_hint)
+		GPlatesMaths::PolylineOnSphere::non_null_ptr_to_const_type points,
+		const GPlatesGui::ColourProxy &colour,
+		const float arrowhead_size_in_pixels,
+		const float arrowline_width_hint)
 {
-
-	// This could also be passed in the arguments to this "create..." function...
-	const float MAX_ARROWHEAD_SIZE = 0.005f;
-
 	RenderedGeometry::impl_ptr_type rendered_geom_impl(new RenderedArrowedPolyline(
-		points, colour,ratio_arrowhead_size_to_globe_radius,
-		MAX_ARROWHEAD_SIZE,arrowline_width_hint));
+		points, colour, arrowhead_size_in_pixels, arrowline_width_hint));
 
 	return RenderedGeometry(rendered_geom_impl);		
 

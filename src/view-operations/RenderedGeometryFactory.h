@@ -116,9 +116,15 @@ namespace GPlatesViewOperations
 		const float DEFAULT_RATIO_ARROWHEAD_SIZE_TO_GLOBE_RADIUS = 0.03f;
 
 		/**
+		 * Determines the default size of an arrowhead (in device-independent pixels).
+		 * This is a view-dependent scalar.
+		 */
+		const float DEFAULT_ARROWHEAD_SIZE_IN_PIXELS = 8.0f;
+
+		/**
 		 * Determines the default ratio of the width of an arrowline relative to the size of its arrowhead.
 		 *
-		 * The size of an arrowhead is actually is length (along the arrowline), not its width -
+		 * The size of an arrowhead is actually its length (along the arrowline), not its width -
 		 * the arrowhead width to arrowhead length ratio is fixed in the rendering engine in order
 		 * to give the arrowhead a nice shape.
 		 */
@@ -459,7 +465,7 @@ namespace GPlatesViewOperations
 		create_rendered_arrowed_polyline(
 				GPlatesMaths::PolylineOnSphere::non_null_ptr_to_const_type,
 				const GPlatesGui::ColourProxy &colour = DEFAULT_COLOUR,
-				const float ratio_arrowhead_size_to_globe_radius = DEFAULT_RATIO_ARROWHEAD_SIZE_TO_GLOBE_RADIUS,
+				const float arrowhead_size_in_pixels = DEFAULT_ARROWHEAD_SIZE_IN_PIXELS,
 				const float arrowline_width_hint = DEFAULT_LINE_WIDTH_HINT);
 
 		/**

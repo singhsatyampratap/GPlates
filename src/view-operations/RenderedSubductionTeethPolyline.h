@@ -52,8 +52,8 @@ namespace GPlatesViewOperations
 		d_subduction_polarity(subduction_polarity),
 		d_colour(colour),
 		d_line_width_hint(line_width_hint),
-		d_teeth_spacing_to_width_ratio(teeth_spacing_to_width_ratio),
 		d_teeth_width_in_pixels(teeth_width_in_pixels),
+		d_teeth_spacing_to_width_ratio(teeth_spacing_to_width_ratio),
 		d_teeth_height_to_width_ratio(teeth_height_to_width_ratio)
 		{  }
 
