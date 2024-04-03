@@ -520,6 +520,9 @@ GPlatesGui::GlobeRenderedGeometryLayerPainter::visit_rendered_subduction_teeth_p
 	const double teeth_width = d_device_independent_pixel_to_world_space_ratio * d_scale * rendered_subduction_teeth_polyline.get_teeth_width_in_pixels();
 	const double teeth_spacing = teeth_width * rendered_subduction_teeth_polyline.get_teeth_spacing_to_width_ratio();
 	const double teeth_height = teeth_width * rendered_subduction_teeth_polyline.get_teeth_height_to_width_ratio();
+	// Wide lines push the teeth further from the centre of the line by half the line's width
+	// (reduced by half a pixel since the line is typically anti-aliased, so we don't want a tiny gap between the line and teeth).
+	const double teeth_offset = (0.5 * line_width - 0.5) * d_device_independent_pixel_to_world_space_ratio;
 	// If overriding plate is on the right side then need to invert great circle arc normal (which is on the left).
 	const double overriding_normal_factor =
 			(rendered_subduction_teeth_polyline.get_subduction_polarity() == GPlatesViewOperations::RenderedSubductionTeethPolyline::SubductionPolarity::LEFT)
@@ -531,7 +534,7 @@ GPlatesGui::GlobeRenderedGeometryLayerPainter::visit_rendered_subduction_teeth_p
 	stream_primitives_type::Triangles stream_teeth(teeth_stream);
 	stream_teeth.begin_triangles();
 
-	// Paint the subduction teeth.
+	// Iterate over the segments of the polyline.
 	double arc_length_since_last_tooth = 0;
 	for (const auto &gca : *polyline)
 	{
@@ -542,24 +545,30 @@ GPlatesGui::GlobeRenderedGeometryLayerPainter::visit_rendered_subduction_teeth_p
 
 		arc_length_since_last_tooth += gca.arc_length().dval();
 
+		// Paint the teeth at uniform spacings along the polyline.
 		while (arc_length_since_last_tooth > teeth_spacing)
 		{
+			// Rotate the current segment's end point back along segment (towards the start point) to get the tooth position.
 			const GPlatesMaths::Rotation tooth_rotation = GPlatesMaths::Rotation::create(
 					gca.rotation_axis(),
 					-(arc_length_since_last_tooth - teeth_spacing));
-
 			const GPlatesMaths::Vector3D tooth_base_midpoint(tooth_rotation * gca.end_point().position_vector());
 
+			// Direction along the current segment's line.
 			const GPlatesMaths::UnitVector3D tooth_base_direction =
 					GPlatesMaths::cross(gca.rotation_axis(), tooth_base_midpoint).get_normalisation();
 
+			// Unit normal to the current segment.
 			const GPlatesMaths::Vector3D tooth_normal = overriding_normal_factor * gca.rotation_axis();
+
+			// Wide lines push the teeth further from the centre of the line.
+			const GPlatesMaths::Vector3D tooth_offset = teeth_offset * tooth_normal;
 
 			const GPlatesMaths::Vector3D tooth_triangle_vertices[3] =
 			{
-				tooth_base_midpoint + teeth_height * tooth_normal,
-				tooth_base_midpoint - 0.5 * teeth_width * tooth_base_direction,
-				tooth_base_midpoint + 0.5 * teeth_width * tooth_base_direction,
+				tooth_base_midpoint + tooth_offset + teeth_height * tooth_normal,
+				tooth_base_midpoint + tooth_offset - 0.5 * teeth_width * tooth_base_direction,
+				tooth_base_midpoint + tooth_offset + 0.5 * teeth_width * tooth_base_direction,
 			};
 
 			stream_teeth.add_vertex(coloured_vertex_type(tooth_triangle_vertices[0], rgba8_colour));

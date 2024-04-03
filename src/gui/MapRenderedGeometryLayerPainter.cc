@@ -726,6 +726,9 @@ GPlatesGui::MapRenderedGeometryLayerPainter::visit_rendered_subduction_teeth_pol
 	const double teeth_width = d_device_independent_pixel_to_map_space_ratio * d_scale * rendered_subduction_teeth_polyline.get_teeth_width_in_pixels();
 	const double teeth_spacing = teeth_width * rendered_subduction_teeth_polyline.get_teeth_spacing_to_width_ratio();
 	const double teeth_height = teeth_width * rendered_subduction_teeth_polyline.get_teeth_height_to_width_ratio();
+	// Wide lines push the teeth further from the centre of the line by half the line's width
+	// (reduced by half a pixel since the line is typically anti-aliased, so we don't want a tiny gap between the line and teeth).
+	const double teeth_offset = (0.5 * line_width - 0.5) * d_device_independent_pixel_to_map_space_ratio;
 	// If overriding plate is on the left side then need to segment normal (which is on the right - see 'QLineF::normalVector()').
 	const double overriding_normal_factor =
 			(rendered_subduction_teeth_polyline.get_subduction_polarity() == GPlatesViewOperations::RenderedSubductionTeethPolyline::SubductionPolarity::RIGHT)
@@ -776,6 +779,7 @@ GPlatesGui::MapRenderedGeometryLayerPainter::visit_rendered_subduction_teeth_pol
 				const double segment_length = segment.length();
 				const double inv_segment_length = 1.0 / segment_length;
 
+				// Paint the teeth at uniform spacings along the polyline.
 				length_since_last_tooth += segment_length;
 				while (length_since_last_tooth > teeth_spacing)
 				{
@@ -784,23 +788,29 @@ GPlatesGui::MapRenderedGeometryLayerPainter::visit_rendered_subduction_teeth_pol
 						continue;
 					}
 
+					// Interpolate between the current segment's start and end points to get the tooth position.
 					const double interp = inv_segment_length * (segment_length - (length_since_last_tooth - teeth_spacing));
 					const QPointF tooth_base_midpoint = segment.pointAt(interp);
 
+					// Direction along the current segment's line.
 					const QPointF tooth_base_direction(
 							inv_segment_length * segment.dx(),
 							inv_segment_length * segment.dy());
 
+					// Unit normal to the current segment.
 					const QLineF segment_normal = segment.normalVector();  // same length as 'segment'
-					const QPointF tooth_normal_direction(
+					const QPointF tooth_normal_direction(  // unit normal
 							overriding_normal_factor * inv_segment_length * segment_normal.dx(),
 							overriding_normal_factor * inv_segment_length * segment_normal.dy());
 
+					// Wide lines push the teeth further from the centre of the line.
+					const QPointF tooth_offset = teeth_offset * tooth_normal_direction;
+
 					const QPointF tooth_triangle_vertices[3] =
 					{
-						tooth_base_midpoint + teeth_height * tooth_normal_direction,
-						tooth_base_midpoint - 0.5 * teeth_width * tooth_base_direction,
-						tooth_base_midpoint + 0.5 * teeth_width * tooth_base_direction,
+						tooth_base_midpoint + tooth_offset + teeth_height * tooth_normal_direction,
+						tooth_base_midpoint + tooth_offset - 0.5 * teeth_width * tooth_base_direction,
+						tooth_base_midpoint + tooth_offset + 0.5 * teeth_width * tooth_base_direction,
 					};
 
 					stream_teeth.add_vertex(coloured_vertex_type(tooth_triangle_vertices[0].x(), tooth_triangle_vertices[0].y(), 0/*z*/, rgba8_colour));
