@@ -755,6 +755,8 @@ GPlatesQtWidgets::ViewportWindow::connect_view_menu_actions()
 			this, SLOT(enable_3d_scalar_field_display()));
 	QObject::connect(action_Show_Scalar_Coverages, SIGNAL(triggered()),
 			this, SLOT(enable_scalar_coverage_display()));
+	QObject::connect(action_Show_All_Geometries, SIGNAL(triggered()),
+			this, SLOT(enable_all_geometries_display()));
 	// Also update the GUI when the RenderSettings change.
 	QObject::connect(&get_view_state().get_render_settings(), SIGNAL(settings_changed()),
 			this, SLOT(handle_render_settings_changed()));
@@ -1409,6 +1411,16 @@ GPlatesQtWidgets::ViewportWindow::enable_scalar_coverage_display()
 {
 	get_view_state().get_render_settings().set_show_scalar_coverages(
 			action_Show_Scalar_Coverages->isChecked());
+}
+
+void
+GPlatesQtWidgets::ViewportWindow::enable_all_geometries_display()
+{
+	const bool show_all = action_Show_All_Geometries->isChecked();
+
+	// This will show/hide all geometries in the render settings which will also
+	// signal 'handle_render_settings_changed()' to change the individual checkboxes.
+	get_view_state().get_render_settings().set_show_all(show_all);
 }
 
 void
