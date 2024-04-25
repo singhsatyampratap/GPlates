@@ -25,6 +25,8 @@
 
 GPlates is a plate tectonics program with a [range of features](https://www.gplates.org/features/) for visualising and manipulating plate tectonic reconstructions and associated data through geological time. GPlates is developed by [an international team](https://www.gplates.org/contact/) of scientists and software developers.
 
+The [initial release of GPlates](https://web.archive.org/web/20031221211144/http://gplates.org/), version 0.5 Beta, debuted on October 30, 2003. Since its inception, GPlates has evolved into a robust software suite encompassing desktop application, Python libraries, web service and application, and mobile app, offering a comprehensive range of functionalities.
+
 For more information please visit the [GPlates website](https://www.gplates.org/).
 
 ## Documentation
